@@ -1,4 +1,3 @@
-import "./assets/index.css";
 import { Nested } from "./nested";
 
 export function Hello(props: IslandProps) {

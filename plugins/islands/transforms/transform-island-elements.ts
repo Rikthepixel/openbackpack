@@ -1,4 +1,4 @@
-import ts, { ObjectLiteralElementLike } from "typescript";
+import ts, { factory, ObjectLiteralElementLike } from "typescript";
 import {
   createJsxAttributes,
   getJsxElementAttributes,
@@ -34,6 +34,19 @@ export function makeTransformIslandElements(
   options: TransformIslandElementsOptions,
 ) {
   function transformIslandElements(node: ts.Node) {
+    if (
+      ts.isJsxAttribute(node) &&
+      node.initializer &&
+      !ts.isStringLiteralOrJsxExpression(node.initializer)
+    ) {
+      // Prevents bug where JsxElements cause ts compiler error when not wrapped in a JsxExpression
+      node = ts.factory.updateJsxAttribute(
+        node,
+        node.name,
+        ts.factory.createJsxExpression(undefined, node.initializer),
+      );
+    }
+
     node = ts.visitEachChild(node, transformIslandElements, undefined);
 
     if (isJsxElementWithIslandLoadAttribute(node)) {
@@ -80,10 +93,65 @@ export function makeTransformIslandElements(
           propertyName = ts.factory.createStringLiteral(propertyName.text);
         }
 
+        if (!attribute.initializer) {
+          serializableProps.push(
+            ts.factory.createPropertyAssignment(
+              propertyName,
+              ts.factory.createTrue(),
+            ),
+          );
+          continue;
+        }
+
+        if (ts.isJsxExpression(attribute.initializer)) {
+          serializableProps.push(
+            ts.factory.createPropertyAssignment(
+              propertyName,
+              attribute.initializer.dotDotDotToken &&
+                attribute.initializer.expression
+                ? ts.factory.createSpreadElement(
+                    attribute.initializer.expression,
+                  )
+                : attribute.initializer.expression ?? ts.factory.createTrue(),
+            ),
+          );
+          continue;
+        }
+
         serializableProps.push(
           ts.factory.createPropertyAssignment(
             propertyName,
-            attribute.initializer ?? ts.factory.createTrue(),
+            attribute.initializer,
+          ),
+        );
+      }
+
+      if (ts.isJsxElement(node)) {
+        serializableProps.push(
+          ts.factory.createPropertyAssignment(
+            ts.factory.createStringLiteral("children"),
+            ts.factory.createArrayLiteralExpression(
+              node.children
+                .map((child) => {
+                  if (ts.isJsxExpression(child)) {
+                    if (child.dotDotDotToken && child.expression) {
+                      return ts.factory.createSpreadElement(child.expression);
+                    }
+                    return child.expression ?? null;
+                  }
+                  if (ts.isExpression(child)) {
+                    return child;
+                  }
+
+                  if (child.text === undefined) {
+                    return null;
+                  }
+
+                  return ts.factory.createStringLiteral(child.text.trim());
+                })
+                .filter((child) => child !== null),
+              false,
+            ),
           ),
         );
       }

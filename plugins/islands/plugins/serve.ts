@@ -1,12 +1,15 @@
-import { normalizePath, Plugin } from "vite";
+import { normalizePath, PluginOption } from "vite";
 import { IslandsConfig } from "../config";
 import path from "path";
 import { getOrCreate } from "../helpers/map";
 import islandsHydrate from "./hydrate";
-import islandsTransformElements from "./transfor-island-elements";
+import islandsTransformElements from "./transform-elements";
 import { createJsxScriptTag } from "../helpers/ast";
+import { islandsImports } from "./imports";
 
-export default function islandsServe(islandsConfig: IslandsConfig): Plugin[] {
+export default function islandsServe(
+  islandsConfig: IslandsConfig,
+): PluginOption[] {
   const islandsModuleMeta = new Map<string, Set<string>>();
 
   function file(id: string) {
@@ -23,6 +26,13 @@ export default function islandsServe(islandsConfig: IslandsConfig): Plugin[] {
       },
       onIslandTransform(moduleId, element) {
         getOrCreate(islandsModuleMeta, moduleId, () => new Set()).add(element);
+      },
+    }),
+    islandsImports({
+      apply: "serve",
+      islandsConfig,
+      isIsland(id) {
+        return getOrCreate(islandsModuleMeta, id, () => new Set()).size > 0;
       },
     }),
     islandsHydrate({

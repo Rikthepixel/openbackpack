@@ -1,4 +1,4 @@
-type IslandsJsxConfig = {
+export type IslandsJsxConfig = {
   /**
    * A importSource for the jsx, akin to what you might see in a `tsconfig.json`
    *

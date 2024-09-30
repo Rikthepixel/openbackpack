@@ -5,9 +5,7 @@ import devServer from "@hono/vite-dev-server";
 export default defineConfig({
   plugins: [
     islands({
-      jsx: {
-        hydrate: "./src/entry.tsx"
-      }
+      imports: ["src/assets/index.css"],
     }),
     devServer({
       entry: "./src/app.tsx",

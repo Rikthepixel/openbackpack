@@ -4,7 +4,7 @@ import {
   Manifest,
   mergeConfig,
   normalizePath,
-  Plugin,
+  PluginOption,
   ResolvedConfig,
   UserConfig,
 } from "vite";
@@ -12,15 +12,17 @@ import { createJsxScriptTag, createJsxStylesheetLinkTag } from "../helpers/ast";
 import { IslandsConfig } from "../config";
 import { getOrCreate } from "../helpers/map";
 import { glob } from "glob";
-import { makeAnalyzeIslandEntries } from "../transforms/analyze-island-entries";
 import { mergeInput, filePathHash } from "../helpers/vite";
 import path from "path";
 import fs from "fs/promises";
 import islandsHydrate from "./hydrate";
-import islandsTransformElements from "./transfor-island-elements";
+import islandsTransformElements from "./transform-elements";
 import { makeAnalyzeIslandElements } from "../transforms/analyze-island-elements";
+import { islandsImports } from "./imports";
 
-export default function islandsBuild(islandsConfig: IslandsConfig): Plugin[] {
+export default function islandsBuild(
+  islandsConfig: IslandsConfig,
+): PluginOption[] {
   let config: ResolvedConfig;
   let env: ConfigEnv;
   let manifest: Manifest;
@@ -73,11 +75,7 @@ export default function islandsBuild(islandsConfig: IslandsConfig): Plugin[] {
               );
             }
 
-            getOrCreate(
-              islandsModuleMeta,
-              id,
-              () => new Set(),
-            ).add(element);
+            getOrCreate(islandsModuleMeta, id, () => new Set()).add(element);
             entries.add(id);
           },
         );
@@ -166,6 +164,13 @@ export default function islandsBuild(islandsConfig: IslandsConfig): Plugin[] {
       },
       onIslandTransform(id, element) {
         getOrCreate(islandsModuleMeta, id, () => new Set()).add(element);
+      },
+    }),
+    islandsImports({
+      apply: "build",
+      islandsConfig,
+      isIsland(id) {
+        return getOrCreate(islandsModuleMeta, id, () => new Set()).size > 0;
       },
     }),
     islandsHydrate({

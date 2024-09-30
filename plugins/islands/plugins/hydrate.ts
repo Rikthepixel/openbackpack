@@ -19,15 +19,10 @@ export default function islandsHydrate({
   getElements,
   getHash,
 }: IslandsHydrateConfig): Plugin {
-  let viteEnv: ConfigEnv;
   return {
     name: "vite-plugin-islands--hydrate--" + apply,
     enforce: "pre",
     apply,
-
-    config(_, env) {
-      viteEnv = env;
-    },
 
     async resolveId(source, importer) {
       if (source === VIRTUAL_HYDRATOR) {
@@ -45,10 +40,10 @@ export default function islandsHydrate({
       return null;
     },
 
-    async transform(code, id) {
+    async transform(code, id, options) {
       const elements = Array.from(getElements(id));
 
-      if (elements.length === 0 || viteEnv.isSsrBuild) {
+      if (elements.length === 0 || options?.ssr) {
         return;
       }
 
