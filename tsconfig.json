@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": [
+      "node",
+      "vite/client",
+      "./plugins/islands/types"
+    ],
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "baseUrl": "."
+  },
+  "include": [
+    "plugins",
+    "src",
+    "vite.config.ts"
+  ],
+  "references": [{
+    "path": ""
+  }]
+}
