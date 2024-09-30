@@ -1,10 +1,7 @@
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { World } from "./world";
-import { raw } from "hono/html";
 import path from "path";
-import { PropsWithChildren } from "hono/jsx";
-import { Hello } from "./hello";
+import Layout from "./Layout";
 
 const app = new Hono();
 
@@ -17,27 +14,14 @@ if (import.meta.env.PROD) {
   );
 }
 
-function Layout(props: PropsWithChildren) {
-  return (
-    <>
-      {raw("<!DOCTYPE html>")}
-      <html>
-        <head></head>
-        <body>{props.children}</body>
-      </html>
-    </>
-  );
-}
-
 app.get("/", (c) => {
   const jsx = (
     <Layout>
-      <Hello island-load />
-      <World island-load from={20} />
     </Layout>
   );
 
   return c.html(jsx);
 });
 
+export type AppType = typeof app
 export default app;
